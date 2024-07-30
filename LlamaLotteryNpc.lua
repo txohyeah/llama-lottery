@@ -25,7 +25,7 @@ function Register()
           SkinNumber = 1,
           Interaction = {
               Type = 'SchemaExternalForm',
-              Id = 'Bet'
+              Id = 'Lottery'
           },
         },
       }),
@@ -85,7 +85,7 @@ function LlamaLotteryAttendSchemaTags()
                 },
                 "X-Transfer-Purpose":  {
                     "type": "string",
-                    "const": "Bet"
+                    "const": "Lottery"
                 },
             }
         }
@@ -101,7 +101,7 @@ Handlers.add(
         Target = msg.From,
         Tags = { Type = 'SchemaExternal' },
         Data = json.encode({
-          Bet = {
+          Lottery = {
             Target = LlamaCoinProcessId,
             Title = "Attend Llama Lottery?",
             Description = [[
