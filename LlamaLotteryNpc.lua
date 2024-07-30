@@ -43,7 +43,7 @@ function Move()
       Data = json.encode({
         Position = {
           math.random(-3, 3),
-          math.random(12, 17),
+          math.random(12, 15),
         },
       }),
     })
@@ -142,6 +142,7 @@ Handlers.add(
             return
         end
 
+        local balance = lotteryInfo.balance / OneLlamaCoin
         if lotteryInfo.count < 10 then
             ao.send({
                 Target = TARGET_WORLD_PID,
@@ -150,7 +151,7 @@ Handlers.add(
                   ['Author-Name'] = 'Llama Lottery',
                 },
                 Data = lotteryInfo.count .. " players participated in this round. If there are 10 participants, I will share " 
-                .. lotteryInfo.balance .. " Llama Coins to the winners.",
+                .. balance .. " Llama Coins to the winners.",
             })
             return
         end
@@ -162,9 +163,32 @@ Handlers.add(
                   Action = 'ChatMessage',
                   ['Author-Name'] = 'Llama Lottery',
                 },
-                Data = "There are 10 participants. I will share " .. lotteryInfo.balance / OneLlamaCoin .. " Llama Coins to the winners soon.",
+                Data = "There are 10 participants. I will share " .. balance .. " Llama Coins to the winners soon.",
             })
         end
+        
+    end
+)
+
+Handlers.add(
+    "ShowLotteryResult",
+    function (msg)
+        if msg.Tags.Action == "DrawLotteryResult" and msg.From == POOL then
+          return true
+        else
+          return false
+        end
+    end,
+    function (msg)
+        print("Show lottery result")
+        ao.send({
+            Target = TARGET_WORLD_PID,
+            Tags = {
+                Action = 'ChatMessage',
+                ['Author-Name'] = 'Llama Lottery',
+            },
+            Data = msg.Data,
+        })
         
     end
 )

@@ -2,10 +2,13 @@
 LlamaCoinProcessId = LlamaCoinProcessId or nil
 LlamaCoinDenomination = 12
 OneLlamaCoin = 10 ^ LlamaCoinDenomination
+LlamaLotteryNpc = LlamaLotteryNpc or "7mboR6qBAs2eu3EZk6TSLChDRjqyaQ7GbSY6vzqiJY8"
 
 local crypto  = crypto or require(".crypto")
 local sqlite3 = require("lsqlite3")
-local db = sqlite3.open_memory()
+if db == nil then
+    db = sqlite3.open_memory()
+end
 local json = require("json")
 
 
@@ -191,7 +194,15 @@ Handlers.add("AttendGame",
     local participantCount = getParticipantCount()
     if participantCount >= 10 then
         rejectToken(msg)
-        print("Only 10 participants are allowed to play at the same time. Llama coins will be transfer back to " .. msg.Sender .. ".")
+        local result = "Only 10 participants are allowed to play at the same time. Llama coins will be transfer back to " .. msg.Sender .. "."
+        print(result)
+        ao.send({
+            Target = LlamaLotteryNpc,
+            Tags = {
+                Action = "DrawLotteryResult"
+            },
+            Data = result
+        })
         return
     end
 
@@ -243,8 +254,10 @@ Handlers.add("DrawLottery",
     local round = getCurrentRound() or 0
     round = round + 1
     local participantIds = getParticipants()
+    local winner_ids = ""
     if luckyNumber1 == luckyNumber2 then
         local winner = getParticipantsBySeqNo(luckyNumber1 + 1)
+        winner_ids = winner
         local reward = totalReward
         sendReward(winner, reward)
         addLogs(round, totalReward, participantIds, winner, msg.Timestamp)
@@ -252,12 +265,21 @@ Handlers.add("DrawLottery",
         local winner1 = getParticipantsBySeqNo(luckyNumber1 + 1)
         local winner2 = getParticipantsBySeqNo(luckyNumber2 + 1)
         local reward = math.floor(totalReward * 0.5)
+        winner_ids = winner1 .. "," .. winner2
         sendReward(winner1, reward)
         sendReward(winner2, reward)
         addLogs(round, totalReward, participantIds, winner1 .. "," .. winner2, msg.Timestamp)
     end
     LlamaCoinBalance = LlamaCoinBalance - totalReward
     clearParticipants()
+
+    ao.send({
+        Target = LlamaLotteryNpc,
+        Tags = {
+            Action = "DrawLotteryResult"
+        },
+        Data = "Lottery round " .. round .. " is over. The winner is " .. winner_ids .. ". The reward is " .. totalReward / OneLlamaCoin .. " Llama Coins.",
+    })
 
     StartPeriod = true
     print("Draw lottery successfully.")
