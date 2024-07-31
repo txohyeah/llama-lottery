@@ -5,6 +5,8 @@ HasReg = HasReg or false
 
 LlamaCoinDenomination = 12
 OneLlamaCoin = 10 ^ LlamaCoinDenomination
+RecivceMsgTimes = RecivceMsgTimes or 0
+LastPaticipantCount = LastPaticipantCount or 0
 
 local json = require("json")
 
@@ -93,6 +95,18 @@ function LlamaLotteryAttendSchemaTags()
 end
 
 
+function ChatToWorld(data)
+  ao.send({
+    Target = TARGET_WORLD_PID,
+    Tags = {
+      Action = 'ChatMessage',
+      ['Author-Name'] = 'Llama Lottery',
+    },
+    Data = data
+  })
+end
+
+
 Handlers.add(
   'SchemaExternal',
   Handlers.utils.hasMatchingTag('Action', 'SchemaExternal'),
@@ -144,15 +158,15 @@ Handlers.add(
 
         local balance = lotteryInfo.balance / OneLlamaCoin
         if lotteryInfo.count < 10 then
-            ao.send({
-                Target = TARGET_WORLD_PID,
-                Tags = {
-                  Action = 'ChatMessage',
-                  ['Author-Name'] = 'Llama Lottery',
-                },
-                Data = lotteryInfo.count .. " players participated in this round. If there are 10 participants, I will share " 
-                .. balance .. " Llama Coins to the winners.",
-            })
+            if RecivceMsgTimes > 5 or LastPaticipantCount ~= lotteryInfo.count then
+              local data = lotteryInfo.count .. " players participated in this round. If there are 10 participants, I will share " 
+                .. balance .. " Llama Coins to the winners."
+              ChatToWorld(data)
+              RecivceMsgTimes = 0
+            else
+              RecivceMsgTimes = RecivceMsgTimes + 1
+              print("RecivceMsgTimes: " .. RecivceMsgTimes)
+            end
             return
         end
 
