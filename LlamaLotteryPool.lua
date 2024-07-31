@@ -258,7 +258,7 @@ Handlers.add("DrawLottery",
     if luckyNumber1 == luckyNumber2 then
         local winner = getParticipantsBySeqNo(luckyNumber1 + 1)
         winner_ids = winner
-        local reward = totalReward
+        local reward = math.floor(totalReward)
         sendReward(winner, reward)
         addLogs(round, totalReward, participantIds, winner, msg.Timestamp)
     else
