@@ -12,6 +12,7 @@ local json = require("json")
 
 if HasReg == false then
     Register()
+    HasReg = true
 end
 
 function Register()
@@ -32,7 +33,6 @@ function Register()
         },
       }),
     })
-
 end
 
 
@@ -152,6 +152,8 @@ Handlers.add(
     end,
     function (msg)
         local lotteryInfo = json.decode(msg.Data)
+        print(lotteryInfo)
+        
         if lotteryInfo.count <= 0 then
             return
         end
@@ -163,9 +165,11 @@ Handlers.add(
                 .. balance .. " Llama Coins to the winners."
               ChatToWorld(data)
               RecivceMsgTimes = 0
+              LastPaticipantCount = lotteryInfo.count
             else
               RecivceMsgTimes = RecivceMsgTimes + 1
               print("RecivceMsgTimes: " .. RecivceMsgTimes)
+              print("LastPaticipantCount:" .. LastPaticipantCount)
             end
             return
         end

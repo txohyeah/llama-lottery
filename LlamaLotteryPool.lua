@@ -58,12 +58,12 @@ local function rejectToken(msg)
       Action = "Transfer",
       Recipient = msg.Sender,
       Quantity = msg.Quantity,
-      ["X-Transfer-Purpose"] = "Reject-Bet"
+      Tags = {["X-Transfer-Purpose"] = "Reject-Bet" }
     }
     ao.send(message)
 end
 
-local function sendReward(winner_id, reward)
+function sendReward(winner_id, reward)
     assert(winner_id ~= nil, "Missed winner.")
     assert(reward ~= nil and reward > 0, "Reward should be greater than 0.")
     local message = {
@@ -71,9 +71,10 @@ local function sendReward(winner_id, reward)
       Action = "Transfer",
       Recipient = winner_id,
       Quantity = tostring(reward),
-      ["X-Transfer-Purpose"] = "Win-Reward"
+      Tags = {["X-Transfer-Purpose"] = "Win-Reward" }
     }
     ao.send(message)
+    print(message)
     print("sendReward: " .. winner_id .. ", " .. reward)
 end
 
@@ -117,6 +118,15 @@ end
 local function addLogs(round, total_reward, participant_ids, winner_ids, created_at)
     local sql = string.format("INSERT INTO reward_logs (round, total_reward, participant_ids, winner_ids, created_at) VALUES (%d, %d, '%s', '%s', %d)", round, total_reward, participant_ids, winner_ids, created_at)
     db:exec(sql)
+end
+
+function getAllHistoryParticipants()
+    local results = {}
+    local sql = string.format("SELECT participant_ids FROM reward_logs")
+    for row in db:nrows(sql) do
+        table.insert(results, row)
+    end
+    return results
 end
 
 function getRewardLogs(round)
@@ -296,19 +306,42 @@ Handlers.add("RoundInfo",
   end,
   function (msg)
     local count = getParticipantCount()
-    local balance = LlamaCoinBalance
-    local p_ids = getParticipants()
-    local data = {
-      count = count,
-      balance = balance,
-      p_ids = p_ids
-    }
-    ao.send({
+      local balance = LlamaCoinBalance
+      local p_ids = getParticipants()
+      local data = {
+        count = count,
+        balance = balance,
+        p_ids = p_ids
+      }
+
+      ao.send({
         Target = msg.From,
         Tags = {
           Action = "RespRoundInfo",
         },
         Data = json.encode(data)
+      })
+  end
+)
+
+Handlers.add("HistoryRoundInfo",
+  function (msg)
+    if msg.Tags.Action == "HistoryRoundInfo" then
+      return true
+    else
+      return false
+    end
+  end,
+  function (msg)
+    assert(msg.Tags.Round~=nil,"missd Round tag")
+    local data = getRewardLogs(msg.Tags.Round)
+    ao.send({
+      Target = LlamaLotteryNpc,
+      Tags = {
+          Action = "DrawLotteryResult"
+      },
+      Data = "History Lottery round " .. msg.Tags.Round .. ". The winner is " .. data.winner_ids .. ". The reward is " 
+      .. data.total_reward / OneLlamaCoin .. " Llama Coins. The participants are " .. data.participant_ids .. ".",
     })
   end
 )
