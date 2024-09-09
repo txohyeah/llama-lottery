@@ -1,4 +1,5 @@
-dbAdmin = {}
+local dbAdmin = {}
+dbAdmin.__index = dbAdmin
 
 -- Function to create a new database explorer instance
 function dbAdmin.new(db)
@@ -25,12 +26,24 @@ function dbAdmin:count(tableName)
 end
 
 -- Function to execute a given SQL query
-function dbAdmin:exec(sql)
+function dbAdmin:execQuery(sql)
     local results = {}
     for row in self.db:nrows(sql) do
         table.insert(results, row)
     end
     return results
+end
+
+function dbAdmin:execQueryOne(sql)
+    local stmt = self.db:prepare(sql)
+    stmt:step()
+    local value = stmt:get_value(0)
+    stmt:finalize()
+    return value
+end
+
+function dbAdmin:execSql(sql)
+    self.db:exec(sql)
 end
 
 return dbAdmin
